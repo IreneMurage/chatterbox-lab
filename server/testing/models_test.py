@@ -1,32 +1,30 @@
 from datetime import datetime
+import pytest
 
 from app import app
 from models import db, Message
 
+@pytest.fixture(autouse=True)
+def clean_db():
+    """Clean DB before each test."""
+    with app.app_context():
+        db.session.query(Message).delete()
+        db.session.commit()
+    yield
+    with app.app_context():
+        db.session.query(Message).delete()
+        db.session.commit()
+
+
 class TestMessage:
     '''Message model in models.py'''
 
-    with app.app_context():
-        m = Message.query.filter(
-            Message.body == "Hello 👋"
-            ).filter(Message.username == "Liza")
-
-        for message in m:
-            db.session.delete(message)
-
-        db.session.commit()
-
     def test_has_correct_columns(self):
-        '''has columns for message body, username, and creation time.'''
         with app.app_context():
-
-            hello_from_liza = Message(
-                body="Hello 👋",
-                username="Liza")
-            
+            hello_from_liza = Message(body="Hello 👋", username="Liza")
             db.session.add(hello_from_liza)
             db.session.commit()
 
-            assert(hello_from_liza.body == "Hello 👋")
-            assert(hello_from_liza.username == "Liza")
-            assert(type(hello_from_liza.created_at) == datetime)
+            assert hello_from_liza.body == "Hello 👋"
+            assert hello_from_liza.username == "Liza"
+            assert isinstance(hello_from_liza.created_at, datetime)
